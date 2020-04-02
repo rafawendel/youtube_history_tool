@@ -1,0 +1,15 @@
+{
+  "name": "yb_craver",
+  "version": "1.0.5",
+  "description": "",
+  "main": "history.js",
+  "scripts": {
+    "dev": "node history.js && node getCategories.js && node updateHistory.js && node organiseVideos.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Rafael Wendel",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.19.2"
+  }
+}
