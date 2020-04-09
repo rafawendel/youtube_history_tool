@@ -1,9 +1,8 @@
 const fs = require('fs');
 const oldHistory = require('./histórico-de-visualização.json');
-const videoSnippetsObj = require('./video_snippets_obj.json');
+const musicSnippetsObj = require('./music_snippets_obj.json');
 
 // Copying might not be best, but it is quick
-
 let uniqueIdList = new Set();
 function updateHistory(oldHistoryList, snippets) {
   const newHistory = oldHistoryList.reduce((acc, videoObj) => {
@@ -27,4 +26,4 @@ function updateHistory(oldHistoryList, snippets) {
   return newHistory;
 }
 
-updateHistory(oldHistory, videoSnippetsObj);
+updateHistory(oldHistory, musicSnippetsObj);

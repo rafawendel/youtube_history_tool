@@ -62,7 +62,6 @@ function generateVideoSnippetsObjs(rawVideosList) {
 
 async function requestVideoApi() {
   const videoIdList = require('./video_ids.json');
-  const alreadyListedSnippets = require('./video_snippets_obj.json') || {};
   const request = axios.create({
     baseURL: 'https://www.googleapis.com/youtube/v3',
     headers: {
@@ -70,9 +69,11 @@ async function requestVideoApi() {
     }
   });
 
+  const alreadyListedMusicSnippets = fs.existsSync('./music_snippets_obj.json') ? require('./music_snippets_obj.json') : {};
+  const alreadyListedVideoSnippets = fs.existsSync('./video_snippets_obj.json') ? require('./video_snippets_obj.json') : {};
+  const remaininigVideoIdList = videoIdList.filter(id => !(id in alreadyListedMusicSnippets || id in alreadyListedVideoSnippets));
+  
   try {
-    const remaininigVideoIdList = videoIdList.filter(id => !(id in alreadyListedSnippets));
-    
     let errors = [];
     const responses = await batchFetchIds(
       remaininigVideoIdList,
@@ -85,7 +86,8 @@ async function requestVideoApi() {
     const remainingVideos = remaininigVideoIdList.filter(id => !(id in musicSnippetsObj || id in videoSnippetsObj));
 
     fs.writeFile('video_ids.json', JSON.stringify(remainingVideos), err => { if (err) throw err });
-    fs.writeFile('video_snippets_obj.json', JSON.stringify({ ...alreadyListedSnippets, ...musicSnippetsObj }, null, 2), err => { if (err) throw err });
+    fs.writeFile('music_snippets_obj.json', JSON.stringify({ ...alreadyListedMusicSnippets, ...musicSnippetsObj }, null, 2), err => { if (err) throw err });
+    fs.writeFile('video_snippets_obj.json', JSON.stringify({ ...alreadyListedVideoSnippets, ...videoSnippetsObj }, null, 2), err => { if (err) throw err });
 
     if (errors.length > 0) console.error(errors.map(e => e.message));
     fs.writeFile('errors.json', JSON.stringify(errors, null, 2), _p => null);
