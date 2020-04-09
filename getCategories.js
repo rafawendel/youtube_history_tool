@@ -2,10 +2,39 @@ const axios = require('axios');
 const fs = require('fs');
 const KEY = require('./key.json');
 
+function mock(id) {
+  return new Promise((resolve, reject) => (
+    Math.random() < 0.2
+    ? resolve({
+      data: {
+        items: [{
+          id,
+          snippet: {
+            categoryId: '1'
+          }
+        }]
+      }
+    })
+    : Math.random() < 0.01
+    ? reject(new Error(403))
+    : Math.random() < 0.04
+    ? resolve({})
+    : resolve({
+      data: {
+        items: [{
+          id,
+          snippet: {
+            categoryId: '10'
+          }
+        }]
+      }
+    })
+  ));
+}
+
 async function batchFetchIds(idList, request, errorsArr = [], onSuccessCb = i => i) {
-  return await Promise.all(idList.map((id, i) => {
-    if (i < 0 || i >= 50) return null;
-    const { key } = KEY;
+  const { key } = KEY;
+  return await Promise.all(idList.map((id, _i) => {
     if (typeof id !== 'string' || id.length !== 11) return new Error(`ID "${id}" is invalid`);
     return request.get('/videos', {
       params: {
@@ -18,17 +47,17 @@ async function batchFetchIds(idList, request, errorsArr = [], onSuccessCb = i =>
   }));
 }
 
-function generateVideoSnippetsObj(rawVideosList) {
-  return rawVideosList.reduce((acc, response) => {
-    if (!response || response instanceof Error) return acc;
+function generateVideoSnippetsObjs(rawVideosList) {
+  return rawVideosList.reduce(([accMusic, accOther], response) => {
+    if (!response || response instanceof Error) return [accMusic, accOther];
     const video = response.items[0];
-    if (!video) return acc;
+    if (!video) return [accMusic, accOther];
 
-    //Filters out videos that are not categorized as "music"
-    if (video.snippet.categoryId !== '10') return acc;
-
-    return { ...acc, [video.id]: video.snippet };
-  }, {})
+    //Splits videos that are not categorized as "music"
+    return video.snippet.categoryId !== '10'
+      ? [accMusic, { ...accOther, [video.id]: video.snippet }]
+      : [{ ...accMusic, [video.id]: video.snippet }, accOther];
+  }, [{},{}])
 }
 
 async function requestVideoApi() {
@@ -49,18 +78,19 @@ async function requestVideoApi() {
       remaininigVideoIdList,
       request,
       errors,
-      res => res && res.data || new Error('No response'));
+      res => res && res.data || new Error('No response')
+    );
 
-    const videoSnippetsObj = generateVideoSnippetsObj(responses);
-    const remainingVideos = remaininigVideoIdList.filter(id => !(id in videoSnippetsObj)); //&& !(responses[i] instanceof Error) removed bc it would cause removal of absent responses
+    const [musicSnippetsObj, videoSnippetsObj] = generateVideoSnippetsObjs(responses);
+    const remainingVideos = remaininigVideoIdList.filter(id => !(id in musicSnippetsObj || id in videoSnippetsObj));
 
     fs.writeFile('video_ids.json', JSON.stringify(remainingVideos), err => { if (err) throw err });
-    fs.writeFile('video_snippets_obj.json', JSON.stringify(videoSnippetsObj), err => { if (err) throw err });
+    fs.writeFile('video_snippets_obj.json', JSON.stringify({ ...alreadyListedSnippets, ...musicSnippetsObj }, null, 2), err => { if (err) throw err });
 
     if (errors.length > 0) console.error(errors.map(e => e.message));
-    fs.writeFile('errors.json', JSON.stringify(errors, null, 2), (_p) => null);
+    fs.writeFile('errors.json', JSON.stringify(errors, null, 2), _p => null);
 
-    return videoSnippetsObj;
+    return musicSnippetsObj;
   } catch(err) {
     console.error(err.message);
   }
