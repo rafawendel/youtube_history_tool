@@ -1,8 +1,8 @@
 This is a simple solution for listing all youtube videos from one's history which are categorized as "music".
 
-This project runs in NodeJS. For details, check "package.json" file.
+This project runs in NodeJS. For details, check ```package.json```.
 
-In order to use it, you must first fetch YouTubeAPI for your history or get the JSON file through Google Takout.
+In order to use it, you must first fetch YouTubeAPI for your history or get the JSON file through Google Takeout.
 
 You will also need a GoogleAPI key with YouTubeDataAPI 3.0 reading scope.
 

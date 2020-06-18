@@ -21,7 +21,7 @@ function updateHistory(oldHistoryList, snippets) {
     return [...acc, { ...videoObj, ...snippets[videoId] }];
   }, []);
 
-  fs.writeFile('./new_history.json', JSON.stringify(newHistory), err => { if (err) console.error(err) });
+  fs.writeFile('./new_history.json', JSON.stringify(newHistory, null, 2), err => { if (err) console.error(err) });
   console.log([...uniqueIdList].length)
   return newHistory;
 }
